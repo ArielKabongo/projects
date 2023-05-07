@@ -1,0 +1,161 @@
+
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT TOP (1000) [Row ID]
+      ,[Order ID]
+      ,[Order Date]
+      ,[Ship Date]
+      ,[Ship Mode]
+      ,[Customer ID]
+      ,[Customer Name]
+      ,[Segment]
+      ,[City]
+      ,[State]
+      ,[Country]
+      ,[Postal Code]
+      ,[Market]
+      ,[Region]
+      ,[Product ID]
+      ,[Category]
+      ,[Sub-Category]
+      ,[Product Name]
+      ,[Sales]
+      ,[Quantity]
+      ,[Discount]
+      ,[Profit]
+      ,[Shipping Cost]
+      ,[Order Priority]
+  FROM [project 1].[dbo].[SuperstoreOrders]
+
+
+select count(*)
+from dbo.superstoreorders
+
+select * 
+from dbo. superstoreorders 
+order by 1
+
+-- amount of items for a specific id( checking for duplicates)
+select [order id], count(*)
+from superstoreorders
+group by [order id] 
+having count(*)>1
+
+select * 
+from superstoreorders
+where [order id] = 'ag-2013-8490'
+
+-- checking if row id can be used as primary key
+select [row id], [order id], count(*)
+from superstoreorders
+group by [row id], [order id]
+having count(*)>1
+
+-- checking for mistakes ( if ship date < order date)
+select * from superstoreorders
+where [ship date]< [order date]
+
+-- shipment modes and time frames
+select distinct [ship mode]from superstoreorders
+
+select datediff(day, [order date], [ship date]) as numofdays, *
+from superstoreorders
+where [ship mode] = 'second class'
+
+--minimum and maximum days delivery
+select min(numofdays) as minimum , max(numofdays) as maximum
+from(
+select datediff(day, [order date], [ship date]) as numofdays, *
+from superstoreorders
+where [ship mode] = 'second class') a
+
+-- number of items purchased by customer
+select [customer id], [order id], count(*) as numberofitems
+from superstoreorders
+group by [customer id], [order id]
+order by [customer id]
+
+-- display all orders that were placed in the year 2020
+select *
+from superstoreorders
+where [order date] >= '2020-01-01' and [order date] <= '2020-12-31';
+
+-- orders that were shipped to california
+select *
+from superstoreorders
+where [state] = 'california';
+
+--total sales for each category
+select category, sum(sales) as total_sales
+from superstoreorders
+group by category;
+
+-- top 10 customers by total sales
+select [customer name], sum([sales]) as total_sales
+from superstoreorders
+group by [customer name]
+order by total_sales desc
+limit 10
+
+-- total sales amount for each month in 2018
+select date_format([order date], '%y-%m') as month, sum([sales]) as total_sales
+from superstoreorders
+where year([order date]) = 2018
+group by date_format([order date], '%y-%m');
+
+--display the top 5 products by sales in the office supplies category.
+select [product name], [sales]
+from superstoreorders
+where [category] = 'office supplies'
+order by [sales] desc limit 5
+
+--display the number of orders and the total sales amount for each region in 2022
+select [region], count(*) as total_orders, sum(sales) as total_sales
+from superstoreorders
+where year([order date]) = 2022
+group by [region];
+
+-- top 5 customers with the most orders
+select[customer name] , count(*) as total_orders
+from superstoreorders
+group by [customer name]
+order by total_orders desc
+limit 5;
+
+-- orders with a profit margin greater than 50%
+select *
+from superstoreorders
+where (profit / sales) > 0.5;
+
+--display the total sales amount for each customer in the democratic republic of congo(my home country)
+select [customer name], sum([sales]) as total_sales
+from superstoreorders
+where country = 'democratic republic of the congo'
+group by [customer name];
+
+-- total sales and profit for each sub-category in the east region
+select [sub-category], sum([sales]) as total_sales, sum([profit]) as total_profit
+from superstoreorders
+where region = 'east'
+group by [sub-category]
+order by total_profit desc
+
+--products that have the highest profit margin:
+select [product name], sum([profit]) / sum([sales]) as profit_margin
+from superstoreorders
+group by [product name]
+order by profit_margin desc
+
+-- total sales for each state in the south region in 2020
+select [state], sum([sales]) as total_sales
+from superstoreorders
+where [region] = 'south' and extract(year from [order date]) = 2020
+group by [state]
+order by total_sales desc
+
+--  percentage of sales for each category in the west region in 2019
+select [category], sum([sales]) / (select sum([sales]) from superstoreorders 
+where [region] = 'west' and extract(year from [order date]) = 2019) * 100 as sales_percentage
+from superstoreorders
+where [region] = 'west' and extract(year from [order date]) = 2019
+group by [category]
+order by sales_percentage desc
