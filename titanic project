@@ -1,0 +1,132 @@
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT TOP (1000) [PassengerId]
+      ,[Survived]
+      ,[Pclass]
+      ,[Name]
+      ,[Sex]
+      ,[Age]
+      ,[SibSp]
+      ,[Parch]
+      ,[hometown]
+      ,[Ticket]
+      ,[Fare]
+      ,[Cabin]
+      ,[Embarked]
+  FROM [other ].[dbo].[titanic]
+
+  select * from titanic
+
+  Select * from [dbo].[titanic]
+--Parsed first and last name
+select 
+right(Name,len(name) - charindex(',', name)) as firstname, 
+left (name,charindex(',', name)-1) as lastname
+from titanic
+
+--Assign Cabin class
+select case [Pclass]
+when 1 then 'first class'
+when 2 then 'second class'
+when 3 then 'third class'
+else ' not recorded'
+end as 'cabin class'
+from titanic
+
+
+--change case for gender
+select case [Sex]
+when 'male' then 'male'
+else 'female'
+end  'gender'
+from titanic
+
+--Create age group for 5 and 10 years. ceiling
+select 
+ceiling(age/5)*5 as five_year_ceiling,
+ceiling(age/10)*10 as ten_year_ceiling,
+[SibSp],
+[Parch],
+from titanic
+
+--family
+select 
+([SibSp] + [Parch] +1) as family_size
+from titanic
+
+--Departure port
+select case [Embarked]
+when 'S' then 'Southampton'
+when 'Q' then 'Queenstown'
+WHEN 'C' then 'Cherbrourg'
+else 'not recorded'
+end ' Embarked'
+from titanic
+
+--Did the person survive?
+select case survived
+when 0 then 'died'
+when 1 then 'survived'
+end as 'survived'
+from titanic
+
+--separate hometown and state
+select 
+right(Hometown,len(hometown) - chrindex(',',hometown)) as hometown_state_country,
+right(destination,len(destination) - charindex(',', destination) as destination
+from titanic
+
+-- split out state and country
+left(Hometown, charindex(',', [hometown])) as home_state,
+right([hometown], len([hometown])- charindex(',',[hometown])) as home_country,
+left([destination],charindex(',',[destination])) as destination_state,
+right([destination],len([destination]) - charindex(',',[destination])) as destination_state_country
+
+--count by sex
+create view gender_count as 
+select
+[Sex],
+count([Sex]) as count_gender
+from titanic
+group by [Sex]
+
+-- count passengers by port of embarkment (drop view port_embarked)
+create view port_embarked as
+select
+[Embarked], count([Embarked]) as 'passenger count'
+from titanic
+where [Embarked] != 'NULL'
+group by [Embarked]
+
+-- passenger by cabin 
+create view class_count as
+select 
+[Cabin], count([Cabin]) as count_by_cabin
+from titanic
+group by [Cabin]
+
+-- count by family size 
+create view family_size
+select family_size ,
+count (family_size) as count_by_family
+from titanic
+
+-- count by survived or died 
+create view survived_count as
+select
+[Survived], COUNT([Survived]) as survived_count
+from titanic
+group by [Survived]
+
+--count by age and cabin
+create view count_age_cabin as 
+select
+[Age],[Cabin], count(*) as age_cabin_count
+from titanic
+group by [Age],[Cabin]
+
+--count by age and survival 
+create view count_age_survived as
+select
+[Age],[Survived], count(*) as age_survived_count
+from titanic
+group by [Age],[Survived]
