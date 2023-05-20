@@ -1,0 +1,169 @@
+select top (1000) [id]
+      ,[listing_url]
+      ,[host_name]
+      ,[neighbourhood]
+      ,[neighbourhood_cleansed]
+      ,[property_type]
+      ,[room_type]
+      ,[price]
+      ,[minimum_nights]
+      ,[maximum_nights]
+      ,[has_availability]
+      ,[availability_30]
+      ,[availability_60]
+      ,[availability_90]
+      ,[availability_365]
+      ,[number_of_reviews]
+      ,[license]
+      ,[calculated_host_listings_count]
+  from [moreproj].[dbo].[listing_toronto]
+  
+  select * from [dbo].[listings_gta] 
+  order by neighbourhood
+
+  select *
+  from [dbo].[listings_gta]
+  where city = 'toronto'
+
+  -- count the number of listings in toronto
+  select count(*)
+  from [dbo].[listings_gta]
+  where city = 'toronto' 
+
+  -- percentage of listings that are in toronto compared the rest of the gta
+  select (count(*) * 100) / (select count(*) from [dbo].[listings_gta]) as percentage
+  from [dbo].[listings_gta]
+  where city = 'toronto';
+
+  -- average price of listings in toronto
+  select avg(price) as avg_price
+  from listings_gta
+  where city = 'toronto'
+
+  --max and min
+  select max(price) as max_price, min(price) as min_price
+  from listings_gta
+  where city = 'toronto'
+
+  --all homes(entire house) listings in toronto 
+  select count(*) as number_of_homes
+  from listings_gta
+  where city = 'toronto' and property_type = 'entire home'
+
+  -- which type of listings are the most popular in toronto (top 5)
+  select property_type, count(*) as count
+  from listings_gta 
+  where city = 'toronto'
+  group by property_type
+  order by count desc limit 5
+
+  --which type of listings are the most popular in the gta (top 5)
+  select property_type, count(*) as count
+  from listings_gta 
+  group by property_type
+  order by count desc 
+
+  -- top 3 neighborhoods in toronto with the highest average listing prices
+  select neighborhood, avg(price) as avg_price
+  from listings_gta
+  where city = 'toronto'
+  group by neighborhood
+  order by avg_price desc
+  limit 3;
+
+  --hosts in toronto who have multiple listings and the count of their listings
+  select id, [host_name], count(*) as listing_count
+  from listings_gta
+  where city = 'toronto'
+  group by id, [host_name]
+  having count(*) > 1
+  order by listing_count
+
+  -- average price per night for each property type in toronto, excluding listings with zero availability
+  select property_type, avg(price / availability_365) as avg_price_per_night
+  from listings_gta
+  where city = 'toronto' and availability_365 > 0
+  group by property_type;
+
+  -- hosts in toronto who have listings in multiple neighborhoods and the count of their listings
+  select id, [host_name], count(distinct [neighborhood]) as neighborhood_count
+  from listings_gta
+  where city = 'toronto'
+  group by id, [host_name]
+  having neighborhood_count > 1
+
+--neighborhoods in toronto where the average price per night is higher than the overall average price per night in the city
+  select neighborhood, avg(price / availability_365) as avg_price_per_night
+  from listings_gta
+  where city = 'toronto'
+  group by neighborhood
+  having avg_price_per_night > (
+    select avg(price / availability_365)
+    from listings_gta
+    where city = 'toronto')
+
+--percentage of listings in the gta that have availability for more than 180 days
+  select (count(*) * 100) / (select count(*) from listings_gta) as percentage
+  from listings_gta
+  where availability_365 > 180
+
+--hosts in the gta who have multiple listings and the count of their listings:
+  select id, [host_name], count(*) as listing_count
+  from listings_gta
+  group by id, [host_name]
+  having count(*) > 1
+
+-- average price per night for each room type in the gta
+  select room_type, avg(price / availability_365) as avg_price_per_night
+  from listings_gta
+  where availability_365 is not null
+  group by room_type
+
+--retrieve the listings in the gta that have the highest number of reviews
+  select *
+  from listings_gta
+  where number_of_reviews = (
+    select max(number_of_reviews)
+    from listings_gta
+  )
+
+-- total earnings for each host in the gta
+  select [id],[host_name], sum(price * availability_365) as total_earnings
+  from listings_gta
+  group by [id],[host_name]
+
+--the hosts in the gta who have listings in all neighborhoods and have the highest total earnings:
+  select id, [host_name], sum(price * availability_365) as total_earnings
+  from listings_gta
+  where id in (
+     select id
+     from listings_gta
+     group by id
+     having count(distinct neighbourhood) = (
+        select count(distinct neighbourhood)
+        from listings_gta
+       )
+   )
+  group by id, [host_name]
+  order by total_earnings desc
+
+-- listings in the gta that have the highest average availability per month
+  select *
+  from listings_gta
+  order by (availability_365 / 12) desc
+  limit 5
+
+--hosts in the gta who have both a license and the highest number of listings, along with their average price per night
+  select host_name, count(*) as listing_count, avg(price / availability_365) as avg_price_per_night
+  from listings_gta
+  where license is not null
+  group by host_name
+  having count(*) = (
+    select max(listing_count)
+    from (
+        select count(*) as listing_count
+        from listings_gta
+        where license is not null
+        group by host_name
+    ) as subquery
+  )
